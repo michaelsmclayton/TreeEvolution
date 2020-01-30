@@ -2,22 +2,19 @@ import time
 import turtle
 import re
 import numpy as np
-import matplotlib.pyplot as plt
 
 class TreeLSystem:
     '''Tree L-System'''
 
     # ------------------------------------------
     # Constructor
-    def __init__(self, ANGLE1, ANGLE2, RATE, MIN, screenSize):
-        self.ANGLE1 = ANGLE1
-        self.ANGLE2 = ANGLE2
-        self.RATE = RATE
-        self.MIN = MIN
+    def __init__(self, parameters, screenSize, display=False):
+        self.parameters = parameters[0]
         self.leafPositions = None
         self.screenSize = screenSize
         self.pen = None
         self.productionRules
+        self.display = display
 
     # ------------------------------------------
     # Helper functions
@@ -26,7 +23,7 @@ class TreeLSystem:
         indices = [m.start() for m in p.finditer(string)]
         return string[0:indices[0]+1]
 
-    def makeNewPen(self, screenSize, xOffset=0, yOffset=-.5, penSize=5, penColour=0):
+    def makeNewPen(self, screenSize, xOffset=-.01, yOffset=-.8, penSize=5, penColour=0):
         pen = turtle.Turtle()
         pen.hideturtle() # don't show the turtle
         pen.left(90) # point pen up instead of right
@@ -37,14 +34,19 @@ class TreeLSystem:
         pen.pencolor(penColour, penColour, penColour)
         return pen
 
+    def normalDistSample(self, mean):
+        return mean + np.random.randn() * 3
+
     # ------------------------------------------
     # Define production rules
     def X(self, *inputs):
         s = inputs[0] # # Get inputs (i.e. length)
-        s *= self.RATE # Reduce length by rate
-        if s > self.MIN:
+        currentANGLE1 = self.normalDistSample(self.parameters['ANGLE1'])
+        currentANGLE2 = self.normalDistSample(self.parameters['ANGLE2'])
+        s *= self.parameters['RATE'] # Reduce length by rate
+        if s > self.parameters['MIN']:
             return \
-                "F(%s)[+(%s)X(%s)][-(%s)X(%s)]X(%s)" % (s, self.ANGLE1, s, self.ANGLE2, s, s)
+                "F(%s)[+(%s)X(%s)][-(%s)X(%s)]F(%s)X(%s)" % (s, currentANGLE1, s, currentANGLE2, s, s, s)
         else:
             return 'E'
     productionRules = {
@@ -54,9 +56,9 @@ class TreeLSystem:
 
     # ------------------------------------------
     # Perform iterative L-system
-    def getLSystem(self, axiom, iterations=6):
+    def getLSystem(self, axiom):
         # Perform iterations
-        for iteration in range(iterations):
+        for iteration in range(self.parameters['ITERATIONS']):
             # Search through axiom
             new_axiom = ""
             for letter in range(len(axiom)):
@@ -87,7 +89,10 @@ class TreeLSystem:
     def minus(self, angle):
         self.pen.right(angle)
     def E(self, x):
+        formerPenSize = self.pen.pensize()
+        self.pen.pensize(.2)
         self.pen.dot()
+        self.pen.pensize(formerPenSize)
         self.leafPositions.append(self.pen.pos())
 
     # ------------------------------------------
@@ -129,24 +134,28 @@ class TreeLSystem:
             self.pen.pensize(penSize)
 
         # Display final result
-        turtle.update()
+        if self.display==True:
+            turtle.update()
 
         # Return leaf positions
         return np.array(self.leafPositions)
 
     # ------------------------------------------
     # Assess fitness
-    def leafCoverFitnessFunction(self, leafWidth=4):
+    def leafCoverFitnessFunction(self, leafWidth=40):
         if len(self.leafPositions)>0:
             xPositions = self.leafPositions[:,0]
             xSpace = np.arange(start=-self.screenSize[0]/2, stop=self.screenSize[0]/2, step=.1)
             xSpace = np.round(xSpace, decimals=1)
             leafCover = np.zeros(shape=xSpace.shape)
             for pos in xPositions:
-                index = np.where(xSpace==np.round(pos, decimals=1))[0][0]
-                for i in range(index-leafWidth, index+leafWidth):
-                    leafCover[i] = 1
-            return np.sum(leafCover)
+                matches = np.where(xSpace==np.round(pos, decimals=1))
+                if len(matches[0])>0:
+                    index = matches[0][0]
+                    if index<(len(xSpace)-leafWidth):
+                        for i in range(index-leafWidth, index+leafWidth):
+                            leafCover[i] = 1
+            return np.mean(leafCover)
         else:
             return 0
 
@@ -158,6 +167,6 @@ class TreeLSystem:
         self.leafPositions = self.drawAxiom(axiom)
         fitness = self.leafCoverFitnessFunction()
         return {
-            'parameters': [self.ANGLE1, self.ANGLE2, self.RATE, self.MIN],
+            'parameters': self.parameters,
             'fitness': fitness
         }
