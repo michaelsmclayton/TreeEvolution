@@ -1,3 +1,4 @@
+# requires imagemagick
 for i in $(seq 0 29)
 do
     convert $i.ps -background white -strip $i.png
