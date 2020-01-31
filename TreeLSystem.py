@@ -56,9 +56,9 @@ class TreeLSystem:
 
     # ------------------------------------------
     # Perform iterative L-system
-    def getLSystem(self, axiom):
+    def getLSystem(self, axiom, iterations=7):
         # Perform iterations
-        for iteration in range(self.parameters['ITERATIONS']):
+        for iteration in range(iterations):
             # Search through axiom
             new_axiom = ""
             for letter in range(len(axiom)):
@@ -155,7 +155,7 @@ class TreeLSystem:
                     if index<(len(xSpace)-leafWidth):
                         for i in range(index-leafWidth, index+leafWidth):
                             leafCover[i] = 1
-            return np.mean(leafCover)
+            return np.sum(leafCover)
         else:
             return 0
 

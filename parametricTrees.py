@@ -3,7 +3,7 @@ import numpy as np
 from TreeLSystem import TreeLSystem
 import matplotlib.pyplot as plt
 
-populationSize = 40
+populationSize = 10
 generations = 40
 
 # ----------------------------------
@@ -20,11 +20,11 @@ creator.create("Individual", list, fitness=creator.FitnessMax)
 toolbox = base.Toolbox()
 def randomIndividual():
     return {
-        'ANGLE1': np.random.rand()*50,
-        'ANGLE2': np.random.rand()*50,
-        'RATE': np.random.rand(),
-        'MIN': np.random.rand()*35,
-        'ITERATIONS': np.random.randint(low=2,high=8)
+        'ANGLE1': np.random.rand()*10,
+        'ANGLE2': np.random.rand()*10,
+        'RATE': .2 + np.random.rand()*.4,
+        'MIN': np.random.rand()*25,
+        'ITERATIONS': np.random.randint(low=2,high=4)
     }
 toolbox.register("attr_assign", randomIndividual)
 toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_assign, 1)
@@ -43,13 +43,18 @@ def mate(child1, child2):
             source = np.random.randint(0,2)
             children[c][0][key] = parents[source][0][key]
             if np.random.rand()<.15: # Mutation
-                randomValues = randomIndividual()
-                children[c][0][key] = randomValues[key]
+                if key in ('ANGLE1', 'ANGLE2', 'MIN'):
+                    randomValue = np.random.randn()*15
+                if key == 'RATE':
+                    randomValue = np.random.randn()*.2
+                if key == 'ITERATIONS':
+                    randomValue = np.random.randint(low=1,high=4)-2
+                children[c][0][key] += randomValue
     return children
 toolbox.register("evaluate", evaluate)
 toolbox.register("mate", mate)
 # toolbox.register("mutate", tools.mutFlipBit, indpb=0.05)
-toolbox.register("select", tools.selTournament, tournsize=10)
+toolbox.register("select", tools.selTournament, tournsize=5)
 
 
 # ----------------------------------
@@ -119,48 +124,3 @@ for g in range(generations):
         lSystem = TreeLSystem(bestIndividual, screenSize, display=True) # Make new tree
         result = lSystem.run()
         turtle.getscreen().getcanvas().postscript(file='%s.ps' % (g))
-
-
-
-
-
-
-
-
-
-
-
-# # Initialise fitness stores
-# maxFitness = 0
-# champion = None
-
-# # Iterate through organisms
-# for p in range(populationSize):
-
-#     # Reset screen
-#     screen.reset()
-
-#     # Get new organism parameters
-#     parameters = {
-#         'ANGLE1': ANGLE1[p],
-#         'ANGLE1_STD': ANGLE1_STD[p],
-#         'ANGLE2': ANGLE2[p],
-#         'ANGLE2_STD': ANGLE2_STD[p],
-#         'RATE': RATE[p],
-#         'MIN': MIN[p]
-#     }
-
-#     # Make new tree
-#     lSystem = TreeLSystem(parameters, screenSize)
-#     result = lSystem.run()
-
-#     # Assess fitness
-#     print(result['fitness'])
-#     if result['fitness']>maxFitness:
-#         maxFitness = result['fitness']
-#         champion = result['parameters']
-
-# # Show final winner
-# lSystem = TreeLSystem(champion, screenSize)
-# screen.reset()
-# result = lSystem.run()
