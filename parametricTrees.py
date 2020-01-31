@@ -3,8 +3,8 @@ import numpy as np
 from TreeLSystem import TreeLSystem
 import matplotlib.pyplot as plt
 
-populationSize = 10
-generations = 40
+populationSize = 20
+generations = 30
 
 # ----------------------------------
 # Set up evolution
@@ -20,8 +20,8 @@ creator.create("Individual", list, fitness=creator.FitnessMax)
 toolbox = base.Toolbox()
 def randomIndividual():
     return {
-        'ANGLE1': np.random.rand()*10,
-        'ANGLE2': np.random.rand()*10,
+        'ANGLE1': np.random.rand()*1,
+        'ANGLE2': np.random.rand()*1,
         'RATE': .2 + np.random.rand()*.4,
         'MIN': np.random.rand()*25,
         'ITERATIONS': np.random.randint(low=2,high=4)
@@ -44,7 +44,7 @@ def mate(child1, child2):
             children[c][0][key] = parents[source][0][key]
             if np.random.rand()<.15: # Mutation
                 if key in ('ANGLE1', 'ANGLE2', 'MIN'):
-                    randomValue = np.random.randn()*15
+                    randomValue = np.random.randn()*5
                 if key == 'RATE':
                     randomValue = np.random.randn()*.2
                 if key == 'ITERATIONS':
@@ -55,7 +55,6 @@ toolbox.register("evaluate", evaluate)
 toolbox.register("mate", mate)
 # toolbox.register("mutate", tools.mutFlipBit, indpb=0.05)
 toolbox.register("select", tools.selTournament, tournsize=5)
-
 
 # ----------------------------------
 # Run evolution
@@ -123,4 +122,6 @@ for g in range(generations):
         turtle.tracer(0)
         lSystem = TreeLSystem(bestIndividual, screenSize, display=True) # Make new tree
         result = lSystem.run()
+        turtle.setpos([0,-.9*screenSize[1]])
+        turtle.write('Generation %s' % (g+1), align="center", font=("Arial", 14, "normal"))
         turtle.getscreen().getcanvas().postscript(file='%s.ps' % (g))

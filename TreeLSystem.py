@@ -23,7 +23,7 @@ class TreeLSystem:
         indices = [m.start() for m in p.finditer(string)]
         return string[0:indices[0]+1]
 
-    def makeNewPen(self, screenSize, xOffset=-.01, yOffset=-.8, penSize=5, penColour=0):
+    def makeNewPen(self, screenSize, xOffset=0, yOffset=-.8, penSize=5, penColour=0):
         pen = turtle.Turtle()
         pen.hideturtle() # don't show the turtle
         pen.left(90) # point pen up instead of right
@@ -34,15 +34,15 @@ class TreeLSystem:
         pen.pencolor(penColour, penColour, penColour)
         return pen
 
-    def normalDistSample(self, mean):
-        return mean + np.random.randn() * 3
+    def normalDistSample(self, mean, std):
+        return mean + (np.random.randn()*std)
 
     # ------------------------------------------
     # Define production rules
     def X(self, *inputs):
         s = inputs[0] # # Get inputs (i.e. length)
-        currentANGLE1 = self.normalDistSample(self.parameters['ANGLE1'])
-        currentANGLE2 = self.normalDistSample(self.parameters['ANGLE2'])
+        currentANGLE1 = self.parameters['ANGLE1']
+        currentANGLE2 = self.parameters['ANGLE2']
         s *= self.parameters['RATE'] # Reduce length by rate
         if s > self.parameters['MIN']:
             return \
@@ -83,14 +83,14 @@ class TreeLSystem:
     # ------------------------------------------
     # Define turtle movement functions
     def F(self, length):
-        self.pen.forward(length)
+        self.pen.forward(self.normalDistSample(length,3))
     def plus(self, angle):
-        self.pen.left(angle)
+        self.pen.left(self.normalDistSample(angle,5))
     def minus(self, angle):
-        self.pen.right(angle)
+        self.pen.right(self.normalDistSample(angle,5))
     def E(self, x):
         formerPenSize = self.pen.pensize()
-        self.pen.pensize(.2)
+        self.pen.pensize(.3)
         self.pen.dot()
         self.pen.pensize(formerPenSize)
         self.leafPositions.append(self.pen.pos())
@@ -142,7 +142,7 @@ class TreeLSystem:
 
     # ------------------------------------------
     # Assess fitness
-    def leafCoverFitnessFunction(self, leafWidth=40):
+    def leafCoverFitnessFunction(self, leafWidth=5):
         if len(self.leafPositions)>0:
             xPositions = self.leafPositions[:,0]
             xSpace = np.arange(start=-self.screenSize[0]/2, stop=self.screenSize[0]/2, step=.1)
